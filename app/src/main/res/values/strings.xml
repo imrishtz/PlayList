@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">PlayList</string>
+    <string name="artists">Artists</string>
+    <string name="play_list">PlayList</string>
+    <string name="songs">Songs</string>
+    <string name="example">Example</string>
+    <string name="bbbbb">PlayList</string>
+    <string name="ccccc">PlayList</string>
+    <string name="get_permission_text">Lets get the fucking permission and move along</string>
+    <string name="move_along">Move along</string>
+    <string name="no_permission_text">Please approve the permissions, Promise to keep you safe</string>
+    <string name="re_request">Re-Request Permissions</string>
+
+</resources>
