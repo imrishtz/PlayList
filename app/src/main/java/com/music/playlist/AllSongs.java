@@ -3,6 +3,7 @@ package com.music.playlist;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.database.Cursor;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -20,6 +21,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -31,8 +34,13 @@ public class AllSongs extends Fragment {
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mSongsAdapter;
     private RecyclerView.LayoutManager layoutManager;
-    private List<Song> mSongList;
-    MusicPlayer musicPlayer = new MusicPlayer();
+    public List<Song> mSongList;
+    MediaPlayer mMediaPlayer;
+
+    AllSongs(MediaPlayer mediaPlayer) {
+        mMediaPlayer = mediaPlayer;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -60,7 +68,7 @@ public class AllSongs extends Fragment {
                 //Values are passing to activity & to fragment as well
                 Toast.makeText(context, "Single Click on position        :"+position,
                         Toast.LENGTH_SHORT).show();
-                musicPlayer.playStopSong(mSongList.get(position).getPath());
+                ((MainActivity)getActivity()).playSong(mSongList.get(position));
             }
 
             @Override
@@ -71,32 +79,10 @@ public class AllSongs extends Fragment {
                 float x = lastTouchDownXY[0];
                 songInfoBox.show(mSongList.get(position), x);
 
-                /*
-                new AlertDialog.Builder(context)
-                        .setTitle("Delete entry")
-                        .setMessage("Are you sure you want to delete this entry?")
-
-                        // Specifying a listener allows you to take an action before dismissing the dialog.
-                        // The dialog is automatically dismissed when a dialog button is clicked.
-                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                // Continue with delete operation
-                            }
-                        }
-
-
-                        // A null listener allows the button to dismiss the dialog and take no further action.
-                        .setNegativeButton(android.R.string.no, null)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .show();
-                        */
-
             }
 
         }));
         return view;
-
-
     }
 
     private List<Song> getAllAudioFromDevice(final Context context) {
@@ -123,6 +109,7 @@ public class AllSongs extends Fragment {
                 int idIndex = cursor.getColumnIndex(MediaStore.Audio.Media._ID);
                 int isMusicIndex = cursor.getColumnIndex(MediaStore.Audio.Media.IS_MUSIC);
                 int dataIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
+
                 Song song = new Song();
                 String id = cursor.getString(idIndex);
                 String name = cursor.getString(nameIndex);
@@ -136,6 +123,7 @@ public class AllSongs extends Fragment {
                 song.setArtist(artist);
                 song.setId(id);
                 song.setPath(data);
+                song.setTitle(titleStr);
 
                 Log.e(TAG, " song = :" +id + ". name = :" + name + ". album " + album
                         + ". artist" + artist + ". title =  " + titleStr + ".isMusic =" + isMusic);
@@ -197,6 +185,13 @@ public class AllSongs extends Fragment {
 
         }
     }
-
+    public Song getSongByPath(String path) {
+        for (Song song : mSongList) {
+            if (song.getPath().equals(path)) {
+                return song;
+            }
+        }
+        return null;
+    }
 }
 

@@ -2,15 +2,19 @@ package com.music.playlist;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 public class Song {
 
     private String TAG = "Song";
 
     private String mPath;
+    private String mTitle;
     private String mName;
     private String mAlbum;
     private String mArtist;
     private Integer mId;
+
     public String getId() {
         return mPath;
     }
@@ -29,8 +33,16 @@ public class Song {
     public void setName(String Name) {
         Log.v(TAG, "imri1 name = " + Name);
         Name = Name.replace(".mp3", "");
+        Name = Name.replace(".m4a", "");
+
         Log.v(TAG, "imri2 name = " + Name);
         this.mName = Name;
+    }
+    public void setTitle(String title) {
+        mTitle = title;
+    }
+    public String getTitle() {
+        return mTitle;
     }
     public String getAlbum() {
         return mAlbum;
@@ -45,4 +57,9 @@ public class Song {
         this.mArtist = aArtist;
     }
 
+    @NonNull
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

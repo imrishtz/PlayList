@@ -10,5 +10,6 @@
     <string name="move_along">Move along</string>
     <string name="no_permission_text">Please approve the permissions, Promise to keep you safe</string>
     <string name="re_request">Re-Request Permissions</string>
+    <string name="fix_bottom_margins">"5dp"</string>
 
 </resources>

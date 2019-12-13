@@ -55,13 +55,14 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.MyViewHolder
         // - replace the contents of the view with that element
         String artistName = mSongsData.get(position).getArtist();
         boolean isNoArtistName = android.text.TextUtils.isDigitsOnly(artistName);
-        String song = mSongsData.get(position).getName();
-        holder.textView2.setText(song);
+        String songTitle = mSongsData.get(position).getTitle();
+        holder.textView2.setText(songTitle);
         holder.textView3.setText(artistName);
 
         holder.ViewRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                /*
                 if (lastPosition != position) {
                     row_index = position;
                     lastPosition = position;
@@ -70,25 +71,32 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.MyViewHolder
                     lastPosition = -1;
                 }
                 notifyDataSetChanged();
+
+                 */
             }
         });
         holder.ViewRec.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
+                /*
                 row_index = lastPosition;
 
                 notifyDataSetChanged();
+
+                 */
                 return true;
             }
         });
-
+/*
         if (row_index == position) {
             holder.ViewRec.setBackgroundResource(R.drawable.song_selected_boarder);
             row_index = -1;
         } else {
             holder.ViewRec.setBackgroundResource(R.drawable.songs_border);
         }
+ */
     }
+
     static private int lastPosition = -1;
     // Return the size of your dataset (invoked by the layout manager)
     @Override
