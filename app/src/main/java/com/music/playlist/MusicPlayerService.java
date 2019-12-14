@@ -44,29 +44,30 @@ public class MusicPlayerService extends Service implements
     }
     public void playSong(int index){
             Song song = songList.get(index % songList.size());
-            if (index == currentlyPlaying) {
-                stopSong();
-            } else {
-                try {
-                    player.reset();
-                    player.setDataSource(song.getPath());
-                    player.prepare();
-                    player.setVolume(0.5f, 0.5f);
-                    player.setLooping(false);
-                    player.start();
-                    isPlaying = true;
-                    currentlyPlaying = index;
-                    //TODO  currentlyPlaying = song;
-                    //  editor.putString("lastSong", song.getPath());
-                    //  editor.commit();
-                    //  new Thread(this).start();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            try {
+                player.reset();
+                player.setDataSource(song.getPath());
+                player.prepare();
+                player.setVolume(0.5f, 0.5f);
+                player.setLooping(false);
+                player.start();
+                isPlaying = true;
+                currentlyPlaying = index;
+                //TODO  currentlyPlaying = song;
+                //  editor.putString("lastSong", song.getPath());
+                //  editor.commit();
+                //  new Thread(this).start();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
     }
     public void stopSong() {
         player.stop();
+        isPlaying = false;
+    }
+    public void pauseSong() {
+        player.pause();
         isPlaying = false;
     }
     public void playNextSong(int index) {
@@ -74,6 +75,10 @@ public class MusicPlayerService extends Service implements
     }
     public boolean isPlaying() {
         return isPlaying;
+    }
+    public void resume() {
+        player.start();
+        isPlaying = true;
     }
     public int getCurrentPosition() {
         return player.getCurrentPosition();

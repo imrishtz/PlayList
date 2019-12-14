@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     private static final String TAG = "MainActivity";
     Button firstFragmentButton, secondFragmentButton;
+    Button playPauseButton, skipNextButton, resartOrLastButton;
     FragmentManager fragmentManager;
     FragmentTransaction fragmentTransaction;
     Fragment playListsFragment;
@@ -50,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private Intent playIntent;
     private boolean musicBound = false;
     private SongsList mSongListInstance;
+    private final int TIME_TO_GO_LAST_SONG = 3000;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -67,6 +69,41 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         Objects.requireNonNull(getSupportActionBar()).setDisplayShowTitleEnabled(false);
         getSupportActionBar().hide();
 // get the reference of Button's
+        playPauseButton = (Button) findViewById(R.id.play_pause);
+        playPauseButton.setBackgroundResource(R.drawable.ic_play);
+        playPauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (musicSrv.isPlaying()) {
+                    playPauseButton.setBackgroundResource(R.drawable.ic_play);
+                    musicSrv.pauseSong();
+                } else {
+                    playPauseButton.setBackgroundResource(R.drawable.ic_pause);
+                    resumeSong();
+                }
+            }
+        });
+        skipNextButton = (Button) findViewById(R.id.skip_next_song);
+        skipNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                playSong(currentlyPlaying + 1);
+            }
+        });
+
+        resartOrLastButton = (Button) findViewById(R.id.restart_or_last_song);
+        resartOrLastButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if ((musicSrv.getCurrentPosition() < TIME_TO_GO_LAST_SONG) && (currentlyPlaying > 0)) {
+                    playSong(currentlyPlaying - 1);
+                } else {
+                    playSong(currentlyPlaying);
+                }
+            }
+        });
+
         firstFragmentButton = (Button) findViewById(R.id.all_songs);
         secondFragmentButton = (Button) findViewById(R.id.play_lists);
         fragmentManager = getSupportFragmentManager();
@@ -107,9 +144,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
                 seekBarHint.setVisibility(View.VISIBLE);
                 totalTime.setVisibility(View.VISIBLE);
+                //musicSrv.seekTo(seekBar.getProgress());
             }
 
             @Override
@@ -118,15 +155,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 totalTime.setVisibility(View.VISIBLE);
                 int x = (int) Math.ceil(progress);
                 seekBarHint.setText(getTime(x));
-
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if (musicSrv.isPlaying()) {
-                    musicSrv.seekTo(seekBar.getProgress());
-                    mMediaPlayer.seekTo(seekBar.getProgress());
-                }
+                musicSrv.seekTo(seekBar.getProgress());
             }
         });
     }
@@ -139,7 +172,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             //get service
             musicSrv = binder.getService();
             //pass list
-          //TODO  musicSrv.setList(songList);
             musicBound = true;
             List<Song> songList = ((AllSongs)allSongsFragment).getAllSongs();
             musicSrv.setList(songList);
@@ -206,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 }
                 Log.v("imri", "imri isPlaying + " + currentPosition);
                 seekBar.setProgress(currentPosition);
-                if (currentPosition >= duration) {
+                if ((duration != 0) && (currentPosition >= duration)) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -221,17 +253,28 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
     private int currentlyPlaying = -1;
     public void playSong(int index) {
+        duration = 0;
         Song song =  mSongListInstance.getSongByIndex(index);
-
+        Log.v("imri ", "imri3 currentlyPlaying = " + currentlyPlaying);
         if (musicBound) {
             musicSrv.playSong(index);
+            playPauseButton.setBackgroundResource(R.drawable.ic_pause);
             currentlyPlaying = index;
             duration = musicSrv.getSongDuration();
+            seekBar.setProgress(0);
             seekBar.setMax(duration);
             String time = getTime(duration);
             totalTime.setText(time);
             songName.setText(song.getTitle());
             artistAlbumName.setText(song.getArtist() + " - " + song.getAlbum());
+            new Thread(this).start();
+        }
+    }
+    public void resumeSong() {
+
+        if (musicBound) {
+            musicSrv.resume();
+            playPauseButton.setBackgroundResource(R.drawable.ic_pause);
             new Thread(this).start();
         }
     }
