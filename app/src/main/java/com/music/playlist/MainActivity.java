@@ -25,6 +25,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.List;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements Runnable {
@@ -44,11 +45,11 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     TextView artistAlbumName;
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
-
+    private int duration;
     private MusicPlayerService musicSrv;
     private Intent playIntent;
     private boolean musicBound = false;
-
+    private SongsList mSongListInstance;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -59,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.setStatusBarColor(ContextCompat.getColor(this,R.color.black));
-
+        mSongListInstance = SongsList.getInstance();
         sharedPreferences = getSharedPreferences("", Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
 
@@ -78,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         //mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
-        allSongsFragment = new AllSongs(mMediaPlayer);
+        allSongsFragment = new AllSongs();
         fragmentTransaction.add(R.id.container, allSongsFragment, "check");
         fragmentTransaction.commit();
 // perform setOnClickListener event on First Button
@@ -118,23 +119,12 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 int x = (int) Math.ceil(progress);
                 seekBarHint.setText(getTime(x));
 
-
-                double percent = progress / (double) seekBar.getMax();
-                int offset = seekBar.getThumbOffset();
-                int seekWidth = seekBar.getWidth();
-                int val = (int) Math.round(percent * (seekWidth - 2 * offset));
-                int labelWidth = seekBarHint.getWidth();
-
-                if (progress > 0 && mMediaPlayer != null && !mMediaPlayer.isPlaying()) {
-                   // clearMediaPlayer();
-                   // MainActivity.this.seekBar.setProgress(0);
-                }
-
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
+                if (musicSrv.isPlaying()) {
+                    musicSrv.seekTo(seekBar.getProgress());
                     mMediaPlayer.seekTo(seekBar.getProgress());
                 }
             }
@@ -151,6 +141,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             //pass list
           //TODO  musicSrv.setList(songList);
             musicBound = true;
+            List<Song> songList = ((AllSongs)allSongsFragment).getAllSongs();
+            musicSrv.setList(songList);
+            setSongList(songList);
         }
 
         @Override
@@ -158,7 +151,9 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             musicBound = false;
         }
     };
-
+    private void setSongList(List<Song> songList) {
+        mSongListInstance.setSongsList(songList);
+    }
 
     private void prepareSeekBar() {
         String path = sharedPreferences.getString("lastSong", null);
@@ -177,7 +172,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         if(playIntent==null){
             playIntent = new Intent(this, MusicPlayerService.class);
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            startService(playIntent);
             startService(playIntent);
 // TODO
 // TODO
@@ -212,15 +206,27 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 }
                 Log.v("imri", "imri isPlaying + " + currentPosition);
                 seekBar.setProgress(currentPosition);
+                if (currentPosition >= duration) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            musicSrv.stopSong();
+                            playSong(currentlyPlaying + 1);
+                        }
+                    });
+                }
             }
         }
     }
 
+    private int currentlyPlaying = -1;
+    public void playSong(int index) {
+        Song song =  mSongListInstance.getSongByIndex(index);
 
-    public void playSong(Song song) {
         if (musicBound) {
-            musicSrv.playSong(song);
-            int duration = musicSrv.getSongDuration();
+            musicSrv.playSong(index);
+            currentlyPlaying = index;
+            duration = musicSrv.getSongDuration();
             seekBar.setMax(duration);
             String time = getTime(duration);
             totalTime.setText(time);
@@ -228,33 +234,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             artistAlbumName.setText(song.getArtist() + " - " + song.getAlbum());
             new Thread(this).start();
         }
-        /*
-        try {
-            if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
-                clearMediaPlayer();
-                seekBar.setProgress(0);
-                this.
-                wasPlaying = true;
-            }
-
-            if (!wasPlaying) {
-
-                prepareSong(song);
-
-                mMediaPlayer.start();
-                currentlyPlaying = song;
-                editor.putString("lastSong", song.getPath());
-                editor.commit();
-                new Thread(this).start();
-            }
-
-            wasPlaying = false;
-        } catch (Exception e) {
-            e.printStackTrace();
-
-        }
-
-         */
     }
 
     private void prepareSong(Song song){

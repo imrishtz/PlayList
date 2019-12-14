@@ -35,11 +35,7 @@ public class AllSongs extends Fragment {
     private RecyclerView.Adapter mSongsAdapter;
     private RecyclerView.LayoutManager layoutManager;
     public List<Song> mSongList;
-    MediaPlayer mMediaPlayer;
-
-    AllSongs(MediaPlayer mediaPlayer) {
-        mMediaPlayer = mediaPlayer;
-    }
+    SongsList mSongListInstance = SongsList.getInstance();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,7 +43,9 @@ public class AllSongs extends Fragment {
 // Inflate the layout for this fragment
         final Context context = getContext();
         view = inflater.inflate(R.layout.all_songs, container, false);
-        mSongList = getAllAudioFromDevice(context);
+        mSongList = mSongListInstance.getAllSongs(context);
+
+      //  mSongList = getAllAudioFromDevice(context);
         recyclerView = (RecyclerView) view.findViewById(R.id.my_recycler_view);
 
         // use this setting to improve performance if you know that changes
@@ -68,7 +66,7 @@ public class AllSongs extends Fragment {
                 //Values are passing to activity & to fragment as well
                 Toast.makeText(context, "Single Click on position        :"+position,
                         Toast.LENGTH_SHORT).show();
-                ((MainActivity)getActivity()).playSong(mSongList.get(position));
+                ((MainActivity)getActivity()).playSong(position);
             }
 
             @Override
@@ -84,61 +82,10 @@ public class AllSongs extends Fragment {
         }));
         return view;
     }
-
-    private List<Song> getAllAudioFromDevice(final Context context) {
-        final List<Song> tempAudioList = new ArrayList<>();
-        final String [] STAR= {"*"};
-        String selectionMusic = MediaStore.Audio.Media.IS_MUSIC + "!= ? AND ";
-        String selectionMp3 = MediaStore.Files.FileColumns.MIME_TYPE + "= ? ";
-        String ext = MimeTypeMap.getSingleton().getMimeTypeFromExtension("mp3");
-        String[] selExtARGS = new String[]{" 0",ext};
-        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        Cursor cursor= getActivity().getContentResolver().query(uri, STAR, selectionMusic + selectionMp3 , selExtARGS, null);
-        cursor.moveToFirst();
-        for(int r= 0; r<cursor.getCount(); r++, cursor.moveToNext()){
-            Log.e(TAG, "Cursor " + r);
-            int i = cursor.getInt(0);
-            int l = cursor.getString(1).length();
-            if(l>0){
-                Log.e(TAG, "Cursor song");
-                // keep any playlists with a valid data field, and let me know
-                int titleIndex = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
-                int nameIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
-                int albumIndex = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM);
-                int artistIndex = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
-                int idIndex = cursor.getColumnIndex(MediaStore.Audio.Media._ID);
-                int isMusicIndex = cursor.getColumnIndex(MediaStore.Audio.Media.IS_MUSIC);
-                int dataIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
-
-                Song song = new Song();
-                String id = cursor.getString(idIndex);
-                String name = cursor.getString(nameIndex);
-                String album = cursor.getString(albumIndex);
-                String artist = cursor.getString(artistIndex);
-                String titleStr = cursor.getString(titleIndex);
-                String isMusic = cursor.getString(isMusicIndex);
-                String data = cursor.getString(dataIndex);
-                song.setName(name);
-                song.setAlbum(album);
-                song.setArtist(artist);
-                song.setId(id);
-                song.setPath(data);
-                song.setTitle(titleStr);
-
-                Log.e(TAG, " song = :" +id + ". name = :" + name + ". album " + album
-                        + ". artist" + artist + ". title =  " + titleStr + ".isMusic =" + isMusic);
-                Log.e("Name :" + name, " data :" + data);
-
-                tempAudioList.add(song);
-            }
-        }
-        Log.e(TAG, "Cursor is not null");
-        cursor.close();
-
-        return tempAudioList;
+    public List<Song> getAllSongs() {
+        return mSongList;
     }
-
-
+    int IdSongs = 1;
 
     class RecyclerTouchListener implements RecyclerView.OnItemTouchListener{
 
@@ -192,6 +139,11 @@ public class AllSongs extends Fragment {
             }
         }
         return null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 }
 

@@ -10,6 +10,7 @@ import android.os.PowerManager;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MusicPlayerService extends Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
@@ -18,12 +19,12 @@ public class MusicPlayerService extends Service implements
     //media player
     private MediaPlayer player = new MediaPlayer();
     //song list
-    private ArrayList<Song> songs;
+    private List<Song> songList;
     //current position
     private int songPosn;
     boolean wasPlaying = false;
     private final IBinder musicBind = new MusicBinder();
-    private String currentlyPlaying = "";
+    private int currentlyPlaying = -1;
     private boolean isPlaying = false;
     public void initMusicPlayer(){
         player.setWakeMode(getApplicationContext(),
@@ -41,8 +42,9 @@ public class MusicPlayerService extends Service implements
         player.release();
         player = null;
     }
-    public void playSong(Song song){
-            if (song.getPath().equals(currentlyPlaying) ) {
+    public void playSong(int index){
+            Song song = songList.get(index % songList.size());
+            if (index == currentlyPlaying) {
                 stopSong();
             } else {
                 try {
@@ -53,7 +55,7 @@ public class MusicPlayerService extends Service implements
                     player.setLooping(false);
                     player.start();
                     isPlaying = true;
-                    currentlyPlaying = song.getPath();
+                    currentlyPlaying = index;
                     //TODO  currentlyPlaying = song;
                     //  editor.putString("lastSong", song.getPath());
                     //  editor.commit();
@@ -65,8 +67,10 @@ public class MusicPlayerService extends Service implements
     }
     public void stopSong() {
         player.stop();
-        currentlyPlaying = "";
         isPlaying = false;
+    }
+    public void playNextSong(int index) {
+        playSong(index);
     }
     public boolean isPlaying() {
         return isPlaying;
@@ -76,6 +80,9 @@ public class MusicPlayerService extends Service implements
     }
     public int getSongDuration(){
         return player.getDuration();
+    }
+    public void seekTo(int progress) {
+        player.seekTo(progress);
     }
     @Override
     public IBinder onBind(Intent intent) {
@@ -90,7 +97,7 @@ public class MusicPlayerService extends Service implements
     }
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-
+        playNextSong(currentlyPlaying);
     }
 
     @Override
@@ -103,8 +110,8 @@ public class MusicPlayerService extends Service implements
         mediaPlayer.start();
 
     }
-    public void setList(ArrayList<Song> theSongs){
-        songs=theSongs;
+    public void setList(List<Song> theSongs){
+        songList=theSongs;
     }
 
 

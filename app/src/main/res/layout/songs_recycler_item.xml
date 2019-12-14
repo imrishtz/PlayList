@@ -4,6 +4,8 @@
     android:layout_height="45dp"
     android:orientation="vertical"
     android:background="@drawable/songs_border"
+    android:focusable="true"
+    android:clickable="true"
     android:paddingEnd="2dp"
     android:paddingStart="2dp"
     >
