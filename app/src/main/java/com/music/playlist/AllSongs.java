@@ -2,29 +2,18 @@ package com.music.playlist;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.database.Cursor;
-import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
-import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-
 
 public class AllSongs extends Fragment {
     AlertDialog.Builder songInfoDialog;
@@ -63,16 +52,11 @@ public class AllSongs extends Fragment {
                 recyclerView, new ClickListener() {
             @Override
             public void onClick(View view, final int position) {
-                //Values are passing to activity & to fragment as well
-                Toast.makeText(context, "Single Click on position        :"+position,
-                        Toast.LENGTH_SHORT).show();
                 ((MainActivity)getActivity()).playSong(position);
             }
 
             @Override
             public void onLongClick(View view, int position) {
-                Toast.makeText(context, "Long press on position :"+position,
-                        Toast.LENGTH_LONG).show();
                 SongInfoBox songInfoBox = new SongInfoBox(context);
                 float x = lastTouchDownXY[0];
                 songInfoBox.show(mSongList.get(position), x);

@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         resartOrLastButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 if ((musicSrv.getCurrentPosition() < TIME_TO_GO_LAST_SONG) && (currentlyPlaying > 0)) {
                     playSong(currentlyPlaying - 1);
                 } else {
@@ -237,8 +236,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                     return;
                 }
                 Log.v("imri", "imri isPlaying + " + currentPosition);
-                seekBar.setProgress(currentPosition);
                 if ((duration != 0) && (currentPosition >= duration)) {
+                    currentPosition = 0;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -247,21 +246,27 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                         }
                     });
                 }
+                if (musicSrv.isPlaying()) {
+                    seekBar.setProgress(currentPosition);
+                }
             }
         }
     }
 
     private int currentlyPlaying = -1;
     public void playSong(int index) {
+        seekBar.setProgress(0);
         duration = 0;
         Song song =  mSongListInstance.getSongByIndex(index);
         Log.v("imri ", "imri3 currentlyPlaying = " + currentlyPlaying);
         if (musicBound) {
+            if (musicSrv.isPlaying()) {
+                musicSrv.stopSong();
+            }
             musicSrv.playSong(index);
             playPauseButton.setBackgroundResource(R.drawable.ic_pause);
             currentlyPlaying = index;
             duration = musicSrv.getSongDuration();
-            seekBar.setProgress(0);
             seekBar.setMax(duration);
             String time = getTime(duration);
             totalTime.setText(time);
