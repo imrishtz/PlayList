@@ -1,9 +1,11 @@
 package com.music.playlist;
 
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,12 +24,14 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.MyViewHolder
         public View ViewRec;
         public TextView textView2;
         public TextView textView3;
+        public ImageView image_clipart;
         public Button button;
         public MyViewHolder(View v) {
             super(v);
             ViewRec = v;
             textView2 = v.findViewById(R.id.text1);
             textView3 = v.findViewById(R.id.text2);
+            image_clipart = v.findViewById(R.id.image_clipart);
         }
     }
 
@@ -42,7 +46,7 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.MyViewHolder
                                                         int viewType) {
         // create a new view
         View v =  LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.songs_recycler_item, parent, false);
+                .inflate(R.layout.songs_recycler_item_constraint, parent, false);
         MyViewHolder vh = new MyViewHolder(v);
         return vh;
     }
@@ -56,8 +60,10 @@ public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.MyViewHolder
         String artistName = mSongsData.get(position).getArtist();
         boolean isNoArtistName = android.text.TextUtils.isDigitsOnly(artistName);
         String songTitle = mSongsData.get(position).getTitle();
+        Bitmap bitMapClipArt = mSongsData.get(position).getClipArt();
         holder.textView2.setText(songTitle);
         holder.textView3.setText(artistName);
+        holder.image_clipart.setImageBitmap(bitMapClipArt);
 
         holder.ViewRec.setOnClickListener(new View.OnClickListener() {
             @Override

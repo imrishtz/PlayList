@@ -1,5 +1,6 @@
 package com.music.playlist;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -14,7 +15,7 @@ public class Song {
     private String mAlbum;
     private String mArtist;
     private Integer mId;
-
+    private Bitmap mClipArt;
     public String getId() {
         return mPath;
     }
@@ -56,6 +57,10 @@ public class Song {
     public void setArtist(String aArtist) {
         this.mArtist = aArtist;
     }
+    public void setClipArt(Bitmap clipart) {
+        mClipArt = clipart;
+    }
+    public Bitmap getClipArt() { return mClipArt;}
 
     @NonNull
     @Override

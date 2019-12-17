@@ -12,7 +12,7 @@
         android:roundIcon="@mipmap/ic_playlist_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <service android:enabled="true" android:name=".MusicPlayerService"></service> before the
+        <service android:enabled="true" android:name=".MusicPlayerService"></service>
         <activity android:name="com.music.playlist.AskPermission">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">PlayList</string>
     <string name="artists">Artists</string>
-    <string name="play_list">PlayList</string>
+    <string name="play_list">PlayLists</string>
     <string name="songs">Songs</string>
     <string name="example">Example</string>
     <string name="bbbbb">PlayList</string>
@@ -11,7 +11,7 @@
     <string name="no_permission_text">Please approve the permissions, Promise to keep you safe</string>
     <string name="re_request">Re-Request Permissions</string>
     <string name="fix_bottom_margins">"5dp"</string>
-    <string name="text_example">"This5 Is 10a T15ext20 ex25ample30 yo35and40 hy45ra 50len55too60now65per70"</string>
+    <string name="text_example">"Thig5 Iq 10a Tj5ext20 ex25ample30 yo35and40 hy45ra 50len55too60now65per70"</string>
     <string name="time_start">00:00</string>
 
 </resources>

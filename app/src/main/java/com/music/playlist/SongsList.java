@@ -2,7 +2,11 @@ package com.music.playlist;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -30,6 +34,19 @@ public class SongsList {
 
     public List<Song> getAllSongs(Context context) {
         getAllAudioFromDevice(context);
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                android.media.MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                for (Song song : mSongsList) {
+                    mmr.setDataSource(song.getPath());
+                    byte[] data = mmr.getEmbeddedPicture();
+                    if (data != null) {
+                        song.setClipArt(BitmapFactory.decodeByteArray(data, 0, data.length));
+                    }
+                }
+            }
+        });
         return mSongsList;
     }
 
@@ -85,6 +102,7 @@ public class SongsList {
                 song.setId(id);
                 song.setPath(data);
                 song.setTitle(titleStr);
+                //song.setClipArt(getAlbumImage(data));
                 Log.e(TAG, " song = :" +id + ". name = :" + name + ". album " + album
                         + ". artist" + artist + ". title =  " + titleStr + ".isMusic =" + isMusic);
                 Log.e("Name :" + name, " data :" + data);
@@ -95,5 +113,29 @@ public class SongsList {
         Log.e(TAG, "Cursor is not null");
         cursor.close();
         mSongsList = tempAudioList;
+    }
+
+    private Bitmap getAlbumImage(String path) {
+        android.media.MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+        mmr.setDataSource(path);
+        byte[] data = mmr.getEmbeddedPicture();
+        if (data != null) {
+            return BitmapFactory.decodeByteArray(data, 0, data.length);
+        }
+        return null;
+    }
+
+    public class SetAlbumImageThread extends Thread {
+
+        public void run(){
+            android.media.MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            for (Song song : mSongsList) {
+                mmr.setDataSource(song.getPath());
+                byte[] data = mmr.getEmbeddedPicture();
+                if (data != null) {
+                    song.setClipArt(BitmapFactory.decodeByteArray(data, 0, data.length));
+                }
+            }
+        }
     }
 }
