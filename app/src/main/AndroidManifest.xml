@@ -13,6 +13,11 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <service android:enabled="true" android:name=".MusicPlayerService"></service>
+        <service android:name=".MusicServer">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
         <activity android:name="com.music.playlist.AskPermission">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

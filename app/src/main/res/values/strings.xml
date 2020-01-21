@@ -13,5 +13,6 @@
     <string name="fix_bottom_margins">"5dp"</string>
     <string name="text_example">"Thig5 Iq 10a Tj5ext20 ex25ample30 yo35and40 hy45ra 50len55too60now65per70"</string>
     <string name="time_start">00:00</string>
-
+    <string name="pause">Pause</string>
+    <string name="shuffle">Shuffle</string>
 </resources>

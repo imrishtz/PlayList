@@ -1,38 +1,58 @@
 package com.music.playlist;
 
 
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.media.AudioPlaybackConfiguration;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.service.media.MediaBrowserService;
+import android.support.v4.media.MediaDescriptionCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.media.session.MediaButtonReceiver;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.List;
 import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity implements Runnable {
+public class MainActivity extends AppCompatActivity implements Runnable, PopupMenu.OnMenuItemClickListener {
 
     private static final String TAG = "MainActivity";
     Button firstFragmentButton, secondFragmentButton;
-    Button playPauseButton, skipNextButton, resartOrLastButton;
+    Button playPauseButton, skipNextButton, resartOrLastButton, menu;
+
     FragmentManager fragmentManager;
     FragmentTransaction fragmentTransaction;
     Fragment playListsFragment;
@@ -52,6 +72,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private boolean musicBound = false;
     private SongsList mSongListInstance;
     private final int TIME_TO_GO_LAST_SONG = 3000;
+    private AudioManager audioManager;
+
+    private MediaSessionCompat mediaSession;
+    private PlaybackStateCompat.Builder stateBuilder;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -65,10 +89,37 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         mSongListInstance = SongsList.getInstance();
         sharedPreferences = getSharedPreferences("", Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         Objects.requireNonNull(getSupportActionBar()).setDisplayShowTitleEnabled(false);
         getSupportActionBar().hide();
+
+        // Create a MediaSessionCompat
+        mediaSession = new MediaSessionCompat(this, TAG);
+
+        // Enable callbacks from MediaButtons and TransportControls
+        mediaSession.setFlags(
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+
+        // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
+        stateBuilder = new PlaybackStateCompat.Builder()
+                .setActions(
+                        PlaybackStateCompat.ACTION_PLAY |
+                                PlaybackStateCompat.ACTION_PLAY_PAUSE);
+        mediaSession.setPlaybackState(stateBuilder.build());
+
+        // MySessionCallback() has methods that handle callbacks from a media controller
+        //mediaSession.setCallback(MySessionCallback);
+
 // get the reference of Button's
+        menu = findViewById(R.id.menu_button);
+        menu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showMenu(view);
+            }
+        });
         playPauseButton = (Button) findViewById(R.id.play_pause);
         playPauseButton.setBackgroundResource(R.drawable.ic_play);
         playPauseButton.setOnClickListener(new View.OnClickListener() {
@@ -87,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         skipNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                playSong(currentlyPlaying + 1);
+                nextSong();
             }
         });
 
@@ -95,11 +146,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         resartOrLastButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if ((musicSrv.getCurrentPosition() < TIME_TO_GO_LAST_SONG) && (currentlyPlaying > 0)) {
-                    playSong(currentlyPlaying - 1);
-                } else {
-                    playSong(currentlyPlaying);
-                }
+                restartOrLastSong();
             }
         });
 
@@ -114,7 +161,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         seekBar = findViewById(R.id.seekbar);
 
         //mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-
         allSongsFragment = new AllSongs();
         fragmentTransaction.add(R.id.container, allSongsFragment, "check");
         fragmentTransaction.commit();
@@ -161,6 +207,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 musicSrv.seekTo(seekBar.getProgress());
             }
         });
+        IntentFilter intentFilter = new IntentFilter("android.intent.action.MEDIA_BUTTON");
+        registerReceiver(KeyEventListener, intentFilter);
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON, null, this, MediaButtonReceiver.class);
+        mediaSession.setMediaButtonReceiver(PendingIntent.getBroadcast(getApplicationContext(), 0, mediaButtonIntent, 0));
     }
     //connect to the service
     private ServiceConnection musicConnection = new ServiceConnection(){
@@ -189,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private void prepareSeekBar() {
         String path = sharedPreferences.getString("lastSong", null);
         if (path == null) {
-           // showPlayList();
+            songName.setText(R.string.app_name);
         } else {
             Song song = ((AllSongs)allSongsFragment).getSongByPath(path);
             prepareSong(song);
@@ -204,21 +254,20 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             playIntent = new Intent(this, MusicPlayerService.class);
             bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
             startService(playIntent);
-// TODO
-// TODO
-// TODO
-// TODO
-// TODO
-// TODO
-
-           // prepareSeekBar();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopService(playIntent);
         musicSrv=null;
+        unregisterReceiver(KeyEventListener);
+        Log.v(TAG, "imri unregistered");
         Log.v("imri", "imri onDestroy");
     }
 
@@ -235,7 +284,6 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 } catch (Exception e) {
                     return;
                 }
-                Log.v("imri", "imri isPlaying + " + currentPosition);
                 if ((duration != 0) && (currentPosition >= duration)) {
                     currentPosition = 0;
                     runOnUiThread(new Runnable() {
@@ -246,6 +294,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                         }
                     });
                 }
+                // Make sure music is still playing
                 if (musicSrv.isPlaying()) {
                     seekBar.setProgress(currentPosition);
                 }
@@ -254,12 +303,23 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     }
 
     private int currentlyPlaying = -1;
+    private void nextSong() {
+        playSong(currentlyPlaying + 1);
+    }
+    private void restartOrLastSong() {
+        if ((musicSrv.getCurrentPosition() < TIME_TO_GO_LAST_SONG) && (currentlyPlaying > 0)) {
+            playSong(currentlyPlaying - 1);
+        } else {
+            playSong(currentlyPlaying);
+        }
+    }
     public void playSong(int index) {
+        // Start playback
         seekBar.setProgress(0);
         duration = 0;
-        Song song =  mSongListInstance.getSongByIndex(index);
+        Song song = mSongListInstance.getSongByIndex(index);
         Log.v("imri ", "imri3 currentlyPlaying = " + currentlyPlaying);
-        if (musicBound) {
+        if (musicBound && requestAudio()) {
             if (musicSrv.isPlaying()) {
                 musicSrv.stopSong();
             }
@@ -274,14 +334,23 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             artistAlbumName.setText(song.getArtist() + " - " + song.getAlbum());
             new Thread(this).start();
         }
+
     }
     public void resumeSong() {
 
-        if (musicBound) {
+        if (musicBound && requestAudio()) {
             musicSrv.resume();
             playPauseButton.setBackgroundResource(R.drawable.ic_pause);
             new Thread(this).start();
         }
+    }
+    public void stopSong() {
+        playPauseButton.setBackgroundResource(R.drawable.ic_play);
+        musicSrv.stopSong();
+    }
+    public void pauseSong() {
+        playPauseButton.setBackgroundResource(R.drawable.ic_play);
+        musicSrv.pauseSong();
     }
 
     private void prepareSong(Song song){
@@ -312,9 +381,114 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     }
 
 
+    AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    Log.v("imri", "imri + AUDIOFOCUS_GAIN");
+                    if (isLoweredVolume) {
+                        setNoramlVolume();
+                        isLoweredVolume = false;
+                    }
+                    resumeSong();
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    Log.v("imri", "imri + AUDIOFOCUS_LOSS");
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    Log.v("imri", "imri + AUDIOFOCUS_LOSS_TRANSIENT");
+                    pauseSong();
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    Log.v("imri", "imri + AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                    isLoweredVolume = true;
+                    lowerVolume();
+                    break;
+            }
+        }
+    };
+    boolean isLoweredVolume = false;
+    private boolean requestAudio() {
+        // Request audio focus for playback
+        int result = audioManager.requestAudioFocus(afChangeListener,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN);
+
+        return (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+    }
+
+    private void lowerVolume() {
+        float current = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        Log.v("imri", "imri lower");
+        musicSrv.setLowerVolume((float)(current * 0.3));
+    }
+    private void setNoramlVolume() {
+        float current = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        musicSrv.setNoramlVolume((float)(current * 3.3333333333));
+    }
     @Override
-    protected void onPause() {
-        super.onPause();
-        Log.v("imri", "imri onPause");
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        int action = event.getAction();
+        int keyCode = event.getKeyCode();
+        if (action == KeyEvent.ACTION_DOWN) {
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD:
+                    nextSong();
+                    Log.v(TAG, "imri KEYCODE_MEDIA_SKIP_FORWARD ");
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD:
+                    Log.v(TAG, "imri KEYCODE_MEDIA_SKIP_BACKWARD ");
+                    restartOrLastSong();
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_PLAY:
+                    Log.v(TAG, "imri KEYCODE_MEDIA_PLAY ");
+                case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                    Log.v(TAG, "imri KEYCODE_MEDIA_PAUSE ");
+                    if (musicSrv.isPlaying()) {
+                        pauseSong();
+                    } else {
+                        playSong(currentlyPlaying);
+                    }
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+    BroadcastReceiver KeyEventListener = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+            if (event.getAction() != KeyEvent.ACTION_DOWN) return;
+
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_MEDIA_STOP:
+                    // stop music
+                    break;
+                case KeyEvent.KEYCODE_HEADSETHOOK:
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                    // pause music
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_NEXT:
+                    // next track
+                    break;
+                case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                    // previous track
+                    break;
+            }
+        }
+    };
+    public void showMenu(View v) {
+        PopupMenu popup = new PopupMenu(this, v);
+
+        // This activity implements OnMenuItemClickListener
+        popup.setOnMenuItemClickListener(MainActivity.this);
+        popup.inflate(R.menu.all_songs_menu);
+        popup.show();
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem menuItem) {
+        return false;
     }
 }

@@ -142,6 +142,7 @@
             android:background="@drawable/ic_menu"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="@+id/music_player_layout"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
@@ -187,4 +188,6 @@
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@+id/all_songs" />
     </LinearLayout>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

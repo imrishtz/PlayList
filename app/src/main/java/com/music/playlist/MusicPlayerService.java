@@ -9,7 +9,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MusicPlayerService extends Service implements
@@ -22,7 +21,6 @@ public class MusicPlayerService extends Service implements
     private List<Song> songList;
     //current position
     private int songPosn;
-    boolean wasPlaying = false;
     private final IBinder musicBind = new MusicBinder();
     private int currentlyPlaying = -1;
     private boolean isPlaying = false;
@@ -42,25 +40,22 @@ public class MusicPlayerService extends Service implements
         player.release();
         player = null;
     }
-    public void playSong(int index){
-            Song song = songList.get(index % songList.size());
-            try {
-                player.reset();
-                player.setDataSource(song.getPath());
-                player.prepare();
-                player.setVolume(0.5f, 0.5f);
-                player.setLooping(false);
-                player.start();
-                isPlaying = true;
-                currentlyPlaying = index;
-                //TODO  currentlyPlaying = song;
-                //  editor.putString("lastSong", song.getPath());
-                //  editor.commit();
-                //  new Thread(this).start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
+    public void playSong(int index){
+
+        Song song = songList.get(index % songList.size());
+        try {
+            player.reset();
+            player.setDataSource(song.getPath());
+            player.prepare();
+            player.setVolume(0.5f, 0.5f);
+            player.setLooping(false);
+            player.start();
+            isPlaying = true;
+            currentlyPlaying = index;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     public void stopSong() {
         player.stop();
@@ -104,12 +99,10 @@ public class MusicPlayerService extends Service implements
     public void onCompletion(MediaPlayer mediaPlayer) {
         playNextSong(currentlyPlaying);
     }
-
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
         return false;
     }
-
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         mediaPlayer.start();
@@ -118,12 +111,16 @@ public class MusicPlayerService extends Service implements
     public void setList(List<Song> theSongs){
         songList=theSongs;
     }
-
-
     public class MusicBinder extends Binder {
         MusicPlayerService getService() {
             Log.v("imri", "imri Binder");
             return MusicPlayerService.this;
         }
+    }
+    public void setLowerVolume(float volume) {
+        player.setVolume(volume, volume);
+    }
+    public void setNoramlVolume(float volume) {
+        player.setVolume(volume, volume);
     }
 }
