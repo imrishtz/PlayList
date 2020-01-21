@@ -428,6 +428,7 @@ public class MainActivity extends AppCompatActivity implements Runnable, PopupMe
         float current = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         musicSrv.setNoramlVolume((float)(current * 3.3333333333));
     }
+
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int action = event.getAction();
